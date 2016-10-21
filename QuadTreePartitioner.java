@@ -1,0 +1,1 @@
+class QuadTreePartitioner extends Partitioner {

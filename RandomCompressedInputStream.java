@@ -1,0 +1,1 @@
+class RandomCompressedInputStream extends InputStream implements Seekable, PositionedReadable

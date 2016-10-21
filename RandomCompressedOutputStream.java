@@ -1,0 +1,1 @@
+class RandomCompressedOutputStream extends OutputStream 

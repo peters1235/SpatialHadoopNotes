@@ -1,0 +1,49 @@
+Spatial Hadoop生成金字塔的命令的参数说明
+
+命令示例：
+shadoop gplot roads roads_pyramid shape:osm -pyramid levels:0..5 tilewidth:128 tileheight:128 color:red -vflip -fast -overwrite  -no-local 
+
+参数介绍
+简介		带-的参数在程序内部是将一个布尔变量置为true，要赋值的参数以":"分割参数名和参数值
+			打星号的参数的含义有待进一步挖掘
+gplot 		生成金字塔的命令
+roads 		输入数据，能直接读“可分割的压缩文件”（比如bz2格式）
+roads_pyramid 输出文件夹
+*shape:osm 	输入数据的Geometry的类型，支持的类型非常多。每个类型的具体格式还不十分清楚。
+			OSM：实验表明能用它读WKT格式的数据
+			rect:矩形
+			point：点
+			tiger：
+			poly：
+			ogc：
+			wkt：
+			nasapoint：应该是Nasa自定义的点类型
+			nasarect：应该是Nasa自定义的矩形类型			
+pyramid     非常重要的参数，有它的话会生成金字塔，没有的话生成单张图片，得用另外一套参数
+levels:1..5 生成金字塔的级别，1..5表示生成第2级到第6级瓦片。瓦片的级别从0开始编号
+tilewidth	瓦片宽，单位为像素（默认256）
+tileheight	瓦片高，单位为像素（默认256）
+color		绘制图片时用以表示要素的颜色
+*vflip		数据的Y坐标从下往上递增，屏幕坐标以及图片坐标从上往下递增，故翻转一下
+*fast		文档里说用更快的方式绘图，主要在Map阶段完成工作，未查阅代码进行验证
+overwrite	输出文件夹已经存在的话，覆盖之。没有这个参数的话，会报错。
+no-local	强制用MapReduce任务完成任务，默认情况下，数据量较小时可能会直接在本机完成操作。
+
+
+*生成默认情况下，生成级别小于n的瓦片时会用Flat Partition方式———— 直接按HDFS块来绘制，大于n的瓦片会按Pyramid Partition方式————按瓦片所在的空间范围分区之后再行绘制
+n的值目前发现只能在配置文件中配置，在命令行中配置不起作用。配置方式：
+	找到Spatial Hadoopp的配置文件，一般在Hadoop的配置文件夹底下，
+	名为spatial-site.xml，比如我的机器上配置文件的完整路径是
+	/home/shadoop/hadoop-2.7.2/etc/hadoop/spatial-site.xml
+
+	文件中默认只有一个
+	<configuration>
+	</configuration>
+	
+	在其中添加配置项，变成
+	<configuration>	
+		<property>
+			<name>MultilevelPlot.FlatPartitioningLevelThreshold</name>
+			<value>2</value>
+		</property>
+	</configuration>
