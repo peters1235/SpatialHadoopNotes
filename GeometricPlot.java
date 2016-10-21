@@ -23,16 +23,47 @@ shadoop gplot roads.smaple roads.png shape:osm  [ -pyramid tilewidth tileheight|
 
 
 	*/
+
 	public static class GeometricRasterizer extends Plotter{
+		java.awt.Color strokeColor;
+
+		void configure(Configuration conf) {
+		    super.configure(conf);
+		    this.strokeColor = OperationsParams.getColor(conf, "color", Color.BLACK);
+
+		public Canvas createCanvas(int width, int height, Rectangle mbr) {
+		    ImageCanvas imageCanvas = new ImageCanvas(mbr, width, height);
+		    imageCanvas.setColor(strokeColor);
+		    return imageCanvas;
+
+		//主要的绘制逻辑
+		public void plot(Canvas canvasLayer, Shape shape) {
+			ImageCanvas imgLayer = (ImageCanvas) canvasLayer;
+			imgLayer.drawShape(shape);
+
+		public Class<? extends Canvas> getCanvasClass() {
+		    return ImageCanvas.class;
+
+		void merge(Canvas finalLayer, Canvas intermediateLayer) {
+		    ((ImageCanvas)finalLayer).mergeWith((ImageCanvas) intermediateLayer);
+
+		void writeImage(Canvas layer, DataOutputStream out, boolean vflip) 
+		    BufferedImage img =  ((ImageCanvas)layer).getImage();
+		    // Flip image vertically if needed
+		    if (vflip) {
+		        AffineTransform tx = AffineTransform.getScaleInstance(1, -1);
+		        tx.translate(0, -img.getHeight());
+		        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+		        img = op.filter(img, null);		 
+		  
+		    ImageIO.write(img, "png", out);
 
 
-	public static Job plot(Path[] inFiles, Path outFile, OperationsParams params)
-	{
+	public static Job plot(Path[] inFiles, Path outFile, OperationsParams params)		
 		if (params.getBoolean("pyramid", false)) 
 			return MultilevelPlot.plot(inFiles, outFile, GeometricRasterizer.class, params);
 		else {
-      		return SingleLevelPlot.plot(inFiles, outFile, GeometricRasterizer.class, params);
-	}
+      		return SingleLevelPlot.plot(inFiles, outFile, GeometricRasterizer.class, params);	
 
 	/*
 	 Combines images of different datasets into one image that is displayed
@@ -44,9 +75,9 @@ shadoop gplot roads.smaple roads.png shape:osm  [ -pyramid tilewidth tileheight|
    * @param height
    * @return An image that is the combination of all datasets images
     */
-	public static BufferedImage combineImages(Configuration conf, Path[] files,
-      boolean includeBoundaries, int width, int height) {
-	}
+    BufferedImage combineImages(Configuration conf, Path[] files, boolean includeBoundaries, int width, int height) {
+    	//好长
+	
 
 	public static void main(String[] args){
 		System.setProperty("java.awt.headless", "true");

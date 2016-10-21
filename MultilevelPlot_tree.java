@@ -158,62 +158,70 @@ MultilevelPlot
                 shapes = plotter.smooth(shapes); 
             TileIndex key = new TileIndex();       
             	int level, x, y;
-            	Map<TileIndex, Canvas> canvasLayers = new HashMap<TileIndex, Canvas>();
-            	for (Shape shape : shapes)
-            		Rectangle shapeMBR = shape.getMBR();
-            		Rectangle overlappingCells = bottomGrid
-                        .getOverlappingCells(shapeMBR.buffer(bufferSizeXMaxLevel, bufferSizeYMaxLevel));
-                        	//bufferSizeXMaxLevel bufferSizeYMaxLevel
-                        // 从下往上遍历
-                        for (key.level = maxLevel; key.level >= minLevel; key.level--) {
-                            //从左下角开始，往右上去，先上后右
+            Map<TileIndex, Canvas> canvasLayers = new HashMap<TileIndex, Canvas>();
+            for (Shape shape : shapes)
+            	Rectangle shapeMBR = shape.getMBR();
+            	Rectangle overlappingCells = bottomGrid.getOverlappingCells(shapeMBR.buffer(bufferSizeXMaxLevel, bufferSizeYMaxLevel));
+                    return new java.awt.Rectangle(col1, row1, col2 - col1, row2 - row1);
 
-                            Canvas canvasLayer = canvasLayers.get(key);
-                            //有的话直接取，没有的话先创建，应了文章中说的，建好的数组缓存在内存中
-                        	Rectangle tileMBR = new Rectangle();
-                            //当前层级的金字塔中的瓦片的行列数
-                        	int gridSize = 1 << key.level;
-                        	tileMBR.x1 = (inputMBR.x1 * (gridSize - key.x) + inputMBR.x2 * key.x) / gridSize;
+                	//bufferSizeXMaxLevel bufferSizeYMaxLevel
+                    // 从下往上遍历
+                    for (key.level = maxLevel; key.level >= minLevel; key.level--) {
+                      //从左下角开始，往右上去，先上后右
+                      for key.x
+                       for  key.y
+                        //有的话直接取，没有的话先创建，应了文章中说的，建好的数组缓存在内存中                        
+                        Canvas canvasLayer = canvasLayers.get(key);                                                   
+                        
+                        //当前层级的金字塔中的瓦片的行/列数
+                        int gridSize = 1 << key.level;
+
+                        Rectangle tileMBR = new Rectangle();
+                        tileMBR.x1 = (inputMBR.x1 * (gridSize - key.x) + inputMBR.x2 * key.x) / gridSize;
+                        /*
+                        换算成   inputMBR.x1  +  key.x  *  （inputMBR.x2-inputMBR.x1）/gridSize 就清楚了
+                                    起点     | 横向的瓦片数 |      一个瓦片横跨的地理空间长度         |  
+                        */
+
+                    	tileMBR.x2 = (inputMBR.x1 * (gridSize - (key.x + 1)) + inputMBR.x2 * (key.x + 1)) / gridSize;
                             /*
-                            换算成   inputMBR.x1  +  key.x  *  （inputMBR.x2-inputMBR.x1）/gridSize 就清楚了
-                                        起点     | 横向的瓦片数 |      一个瓦片横跨的地理空间长度         |  
-                            */相若
+                            -inputMBR.x1 * (gridSize - (key.x + 1)) /gridSize  + inputMBR.x2 * (key.x + 1)/gridSiz
+                            =inputMBR.x1   +   inputMBR.x2 * (key.x + 1) -   inputMBR.x1*(key.x+1)/gridSize 
+                            =inputMBR.x1  + (key.x+1) * (inputMBR.x2-inputMBR.x1)/gridSize
+                            跟上面的式子一样的
 
-                        	tileMBR.x2 = (inputMBR.x1 * (gridSize - (key.x + 1)) + inputMBR.x2 * (key.x + 1))
-                                    / gridSize;
-                                    /*
-                                    -inputMBR.x1 * (gridSize - (key.x + 1)) /gridSize  + inputMBR.x2 * (key.x + 1)/gridSiz
-                                    =inputMBR.x1   +   inputMBR.x2 * (key.x + 1) -   inputMBR.x1*(key.x+1)/gridSize 
-                                    =inputMBR.x1  + (key.x+1) * (inputMBR.x2-inputMBR.x1)/gridSize
-                                    跟上面的式子一样的
+                            */
+                    	tileMBR.y1 =
+                    	tileMBR.y2 =
+                    	canvasLayer = plotter.createCanvas(tileWidth, tileHeight, tileMBR);
+                    	canvasLayers.put(key.clone(), canvasLayer);
 
-                                    */
-                        	tileMBR.y1 =
-                        	tileMBR.y2 =
-                        	canvasLayer = plotter.createCanvas(tileWidth, tileHeight, tileMBR);
-                        	canvasLayers.put(key.clone(), canvasLayer);
+                    	plotter.plot(canvasLayer, shape);
 
-                        	plotter.plot(canvasLayer, shape);
+                    	// Update overlappingCells for the higher level
+                        //画完底下的一级之后，画上面的一级，
+                        //上面一级的全部瓦片对应的空间范围不变
+                        //但是瓦片数目成了下一级的1/4，纵横方向上都减半了
 
-                        	// Update overlappingCells for the higher level
-                            //画完底下的一级之后，画上面的一级，
-                            //上面一级的全部瓦片对应的空间范围不变
-                            //但是瓦片数目成了下一级的1/4，纵横方向上都减半了
+                        //格网索引从0开始，假设在底下一级X方向上的索引是3，则在上一级中对应的位置的索引应该是1
+                        //如果下一级中的索引为4，则在上一级中索引应该是2 
+                        //不管下级索引中索引值为单还是双数，换算到上一级都是 除以2 再取整
+                        int updatedX1 = overlappingCells.x / 2;
+                        int updatedY1 = overlappingCells.y / 2;
 
-                            //格网索引从0开始，假设在底下一级X方向上的索引是3，则在上一级中对应的位置的索引应该是1
-                            //如果下一级中的索引为4，则在上一级中索引应该是2 
-                            //不管下级索引中索引值为单还是双数，换算到上一级都是 除以2 再取整
-                            int updatedX1 = overlappingCells.x / 2;
-                            int updatedY1 = overlappingCells.y / 2;
+                        //算下一级右上角格网索引对应的上级索引值时，先求出 
+                        //在下一级中 右上角格网的索引值，再除以2取整也就行了
+                        int updatedX2 = (overlappingCells.x + overlappingCells.width - 1) / 2;                                                
+                        int updatedY2 = (overlappingCells.y + overlappingCells.height - 1) / 2;
 
-                            //算下一级右上角格网索引对应的上级索引值时，先求出 
-                            //在下一级中 右上角格网的索引值，再除以2取整也就行了
-                            int updatedX2 = (overlappingCells.x + overlappingCells.width - 1) / 2;
-                            int updatedY2 = (overlappingCells.y + overlappingCells.height - 1) / 2;
+                        overlappingCells.x = updatedX1;
+                        overlappingCells.y = updatedY1;
+                        overlappingCells.width = updatedX2 - updatedX1 + 1;
+                        overlappingCells.height = updatedY2 - updatedY1 + 1;
 
-                //输出，得看看对应的OutputFormat，不用，这只是中间结果，OutputFormat是用来输出最终结果的
-            	for (Map.Entry<TileIndex, Canvas> entry : canvasLayers.entrySet()) {
-                	context.write(entry.getKey(), entry.getValue());
+            //输出，得看看对应的OutputFormat，不用，这只是中间结果，OutputFormat是用来输出最终结果的
+        	for (Map.Entry<TileIndex, Canvas> entry : canvasLayers.entrySet()) {
+            	context.write(entry.getKey(), entry.getValue());
 
     public static class FlatPartitionReduce extends Reducer<TileIndex, Canvas, TileIndex, Canvas>
         private int minLevel, maxLevel;
