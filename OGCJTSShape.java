@@ -64,7 +64,7 @@ class OGCJTSShape implements Shape {
 
     //应该是使用这个了
     void draw(Graphics g, double xscale, double yscale) {
-    	//一刀切地用false会不会有问题？
+    	//全部用false会不会有问题？
         drawJTSGeom(g, geom, xscale, yscale, false);
 
     /*
