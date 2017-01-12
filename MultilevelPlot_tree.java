@@ -185,8 +185,8 @@ MultilevelPlot
 
                     	tileMBR.x2 = (inputMBR.x1 * (gridSize - (key.x + 1)) + inputMBR.x2 * (key.x + 1)) / gridSize;
                             /*
-                            -inputMBR.x1 * (gridSize - (key.x + 1)) /gridSize  + inputMBR.x2 * (key.x + 1)/gridSiz
-                            =inputMBR.x1   +   inputMBR.x2 * (key.x + 1) -   inputMBR.x1*(key.x+1)/gridSize 
+                            =inputMBR.x1 * (gridSize - (key.x + 1)) /gridSize  + inputMBR.x2 * (key.x + 1)/gridSize
+                            =inputMBR.x1   +   inputMBR.x2 * (key.x + 1)/gridSize -   inputMBR.x1*(key.x+1)/gridSize 
                             =inputMBR.x1  + (key.x+1) * (inputMBR.x2-inputMBR.x1)/gridSize
                             跟上面的式子一样的
 

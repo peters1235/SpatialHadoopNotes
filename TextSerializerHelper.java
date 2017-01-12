@@ -6,3 +6,6 @@ final class TextSerializerHelper {
 	//把一个double型的16进制字符串添加到t中
 	void serializeDouble(double d, Text t, char toAppend)
 		//代码中没看出来16进制是在哪里转换的
+
+	OGCGeometry consumeGeometryESRI(Text text, char separator) {
+		

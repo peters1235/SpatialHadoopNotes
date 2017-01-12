@@ -118,7 +118,7 @@ class OGCJTSShape implements Shape {
     			//画点
     		    g.fillRect(xpoints[0], ypoints[0], 1, 1);
     		else if (!fill)
-    			//不填充的话，当线来话
+    			//不填充的话，当线来画
     			//首末端点要相同线才闭合
     		    g.drawPolyline(xpoints, ypoints, n);
     		else

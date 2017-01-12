@@ -1,11 +1,20 @@
+package org.apache.hadoop.mapred;
 /*
+属于旧API
 一般用于配置 Mapper, combiner (if any), Partitioner, Reducer, InputFormat and OutputFormat implementations to be used 
 */
-JobConf extends configuration
+JobConf extends org.apache.hadoop.conf.configuration
+	//跟MapReduce更相关
 	void setJarByClass(Class cls) 
 	String jar = ClassUtil.findContainingJar(cls);
 	setJar(jar);
 		set(JobContext.JAR, jar);
+
+	void setInputFormat(Class<? extends InputFormat> theClass) 
+
+	void setOutputCommitter(Class<? extends OutputCommitter> theClass)
+
+
 
 
 /*
@@ -16,5 +25,7 @@ JobConf extends configuration
 
 	final类型的参数后续不能改
 */
-Configuration
+public class Configuration implements Iterable<Map.Entry<String,String>>,
+                                      Writable
+    //主要是一些键值对相关的设置
 	

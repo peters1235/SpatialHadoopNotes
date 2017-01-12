@@ -54,101 +54,105 @@ Indexer.java
         	 context.write(new IntWritable(-partitionID.get()-1), null); //结束标记
 
     private static Job indexMapReduce(Path inPath, Path outPath,OperationsParams paramss)
-    	Job job = new Job(paramss, "Indexer");
+    	  Job job = new Job(paramss, "Indexer");
 
-    	Rectangle inputMBR = (Rectangle) OperationsParams.getShape(conf, "mbr");
-    	if (inputMBR == null) 
-    		inputMBR = FileMBR.fileMBR(inPath, new OperationsParams(conf));
-      		OperationsParams.setShape(conf, "mbr", inputMBR);
+      	Rectangle inputMBR = (Rectangle) OperationsParams.getShape(conf, "mbr");
+      	if (inputMBR == null) 
+    		    inputMBR = FileMBR.fileMBR(inPath, new OperationsParams(conf));
+      	  	OperationsParams.setShape(conf, "mbr", inputMBR);
       	String index = conf.get("sindex");//grid|str|str+|quadtree|zcurve|kdtree)
-    	setLocalIndexer()
-    		//什么作用？格网索引没有，R树和R+树才有,可能是格网索引不用建local索引，
-    		//直接在本地堆，R树和R+树要建要地索引，
+    	  setLocalIndexer()
+    		    //什么作用？格网索引没有，R树和R+树才有,格网索引不用建local索引，
+    		    //直接在本地堆，R树和R+树要建要地索引，
 
-    	Partitioner partitioner = createPartitioner(inPath, outPath, conf, index);
-    		return createPartitioner(ins:new Path[] {in},Path out, Configuration job, partitionerName);
-    			Class<? extends Partitioner> partitionerClass = PartitionerClasses.get(partitionerName.toLowerCase());
-	          	if (PartitionerReplicate.containsKey(partitionerName.toLowerCase())) 
-	      			boolean replicate = PartitionerReplicate.get(partitionerName.toLowerCase());
-	          		job.setBoolean("replicate", replicate);
-      			Partitioner partitioner = partitionerClass.newInstance();
-      			Rectangle inMBR = (Rectangle) OperationsParams.getShape(job, "mbr");
-      			inSize  //输入文件总大小
-      			for (Path in : ins) {
-        			inSize += FileUtil.getPathSize(in.getFileSystem(job), in);
+    	  Partitioner partitioner = createPartitioner(inPath, outPath, conf, index);
+            return createPartitioner(ins:new Path[] {in},Path out, Configuration job, partitionerName);
+		    
+        Partitioner.setPartitioner(conf, partitioner);
 
-        		/*INDEXING_OVERHEAD： an overhead ratio which accounts for the overhead of replicating records and storing local indexes. 
-				*/
-        		long estimatedOutSize = (long) (inSize * (1.0 + job.getFloat(SpatialSite.INDEXING_OVERHEAD, 0.1f)));
-        		FileSystem outFS = out.getFileSystem(job);
-        		long outBlockSize = outFS.getDefaultBlockSize(out); 
-        		float sample_ratio = job.getFloat(SpatialSite.SAMPLE_RATIO, 0.01f);
-        		// SpatialSite  Combines all the configuration needed for SpatialHadoop 其中有各个参数的名字
-        		
-        		final List<Point> sample = new ArrayList<Point>();
-        		ResultCollector<Point> resultCollector = new ResultCollector<Point>() {
-				@Override
-				public void collect(Point p) {
-					sample.add(p.clone());
-				}
-				};
-
-        		OperationsParams params2 = new OperationsParams(job);//Configuration 的另一层封装 OperationsParams extends Configuration
-        		params2.setFloat("ratio", sample_ratio);
-      			params2.setLong("size", sample_size);
-      			params2.set("shape", job.get("shape")); //rect
-      			params2.set("local", job.get("local"));
-			    params2.setClass("outshape", Point.class, Shape.class);.
-
-			    //**********采样************
-			    //对多边形有取点操作
-			    //实际是将采样完的结果存放在上面定义的sample中
-			    Sampler.sample(ins, resultCollector, params2);
-			    
-			    /*maximum number of points per partition
-			    实际是sample中样本数 除以分区数
-				*/
-				int partitionCapacity = (int) Math.max(1, Math.floor((double)sample.size() * outBlockSize / estimatedOutSize));
-
-				//分区数目
-				int numPartitions = Math.max(1, (int) Math.ceil((float)estimatedOutSize / outBlockSize));
-				partitioner.createFromPoints(inMBR, sample.toArray(new Point[sample.size()]), partitionCapacity);
-					/*
-						输入数据的MBR
-						待分区的点
-						每个分区的最多包含的点数
-					*/
-					
-
-			    return partitioner;
-		Partitioner.setPartitioner(conf, partitioner);
-
-		Shape shape = OperationsParams.getShape(conf, "shape");
-		job.setMapperClass(PartitionerMap.class);
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(shape.getClass());
-		job.setReducerClass(PartitionerReduce.class);
-		job.setInputFormatClass(SpatialInputFormat3.class);
-		SpatialInputFormat3.setInputPaths(job, inPath);
-		job.setOutputFormatClass(IndexOutputFormat.class);
-		IndexOutputFormat.setOutputPath(job, outPath);
-		// Set number of reduce tasks according to cluster status
-	    ClusterStatus clusterStatus = new JobClient(new JobConf()).getClusterStatus();
-	    job.setNumReduceTasks(Math.max(1, Math.min(partitioner.getPartitionCount(),
-    	    (clusterStatus.getMaxReduceTasks() * 9) / 10)));
-
-	    // Use multithreading in case the job is running locally
-  		  conf.setInt(LocalJobRunner.LOCAL_MAX_MAPS, Runtime.getRuntime().availableProcessors());
-
-  		  // Start the job
-		if (conf.getBoolean("background", false)) {
-			// Run in background
-			job.submit();
-		} else {
-			job.waitForCompletion(conf.getBoolean("verbose", false));
-		}
-		return job;
+		    Shape shape = OperationsParams.getShape(conf, "shape");
+		    job.setMapperClass(PartitionerMap.class);
+		    job.setMapOutputKeyClass(IntWritable.class);
+		    job.setMapOutputValueClass(shape.getClass());
+		    job.setReducerClass(PartitionerReduce.class);
+		    job.setInputFormatClass(SpatialInputFormat3.class);
+		    SpatialInputFormat3.setInputPaths(job, inPath);
+		    job.setOutputFormatClass(IndexOutputFormat.class);
+		    IndexOutputFormat.setOutputPath(job, outPath);
+		    // Set number of reduce tasks according to cluster status
+	      ClusterStatus clusterStatus = new JobClient(new JobConf()).getClusterStatus();
+	      job.setNumReduceTasks(Math.max(1, Math.min(partitioner.getPartitionCount(),
+            (clusterStatus.getMaxReduceTasks() * 9) / 10)));
+    
+	      // Use multithreading in case the job is running locally
+  	   	conf.setInt(LocalJobRunner.LOCAL_MAX_MAPS, Runtime.getRuntime().availableProcessors());
+    
+  	   	// Start the job
+		    if (conf.getBoolean("background", false)) {
+  		    	// Run in background
+  		    	job.submit();
+		    } else {
+		    	  job.waitForCompletion(conf.getBoolean("verbose", false));
+		    }
+		    return job;
   
+    Partitioner createPartitioner(Path[] ins, Path out, Configuration job, String partitionerName)       
+        Class<? extends Partitioner> partitionerClass = PartitionerClasses.get(partitionerName.toLowerCase());
+              
+        if (PartitionerReplicate.containsKey(partitionerName.toLowerCase())) 
+            boolean replicate = PartitionerReplicate.get(partitionerName.toLowerCase());
+            job.setBoolean("replicate", replicate);
+            
+        Partitioner partitioner = partitionerClass.newInstance();
+        Rectangle inputMBR = (Rectangle) OperationsParams.getShape(job, "mbr");
+        inSize  //输入文件总大小
+        for (Path in : ins) {
+            inSize += FileUtil.getPathSize(in.getFileSystem(job), in);
+
+        /*INDEXING_OVERHEAD： an overhead ratio which accounts for the overhead of replicating records and storing local indexes. 
+        */
+        long estimatedOutSize = (long) (inSize * (1.0 + job.getFloat(SpatialSite.INDEXING_OVERHEAD, 0.1f)));
+        FileSystem outFS = out.getFileSystem(job);
+        long outBlockSize = outFS.getDefaultBlockSize(out); 
+        float sample_ratio = job.getFloat(SpatialSite.SAMPLE_RATIO, 0.01f);
+        // SpatialSite  Combines all the configuration needed for SpatialHadoop 其中有各个参数的名字
+            
+        final List<Point> sample = new ArrayList<Point>();
+        ResultCollector<Point> resultCollector = new ResultCollector<Point>() {
+            @Override
+            public void collect(Point p) {
+              sample.add(p.clone());
+           
+
+        OperationsParams params2 = new OperationsParams(job);//Configuration 的另一层封装 OperationsParams extends Configuration
+        params2.setFloat("ratio", sample_ratio);
+        params2.setLong("size", sample_size);
+        params2.set("shape", job.get("shape")); //rect
+        params2.set("local", job.get("local"));
+        params2.setClass("outshape", Point.class, Shape.class);.
+
+        //**********采样************
+        //对多边形有取点操作
+        //实际是将采样完的结果存放在上面定义的sample中
+        Sampler.sample(ins, resultCollector, params2);
+          
+        /*maximum number of points per partition
+         实际是sample中样本数 除以分区数
+        */
+        int partitionCapacity = (int) Math.max(1, Math.floor((double)sample.size() * outBlockSize / estimatedOutSize));
+
+        //分区数目
+        int numPartitions = Math.max(1, (int) Math.ceil((float)estimatedOutSize / outBlockSize));
+        partitioner.createFromPoints(inMBR, sample.toArray(new Point[sample.size()]), partitionCapacity);
+            /*
+              输入数据的MBR
+              待分区的点
+              每个分区的最多包含的点数
+            */
+            
+
+        eturn partitioner;
+
   	main
   		OperationsParams params = new OperationsParams(new GenericOptionsParser(args));  
   			this(parser, true);

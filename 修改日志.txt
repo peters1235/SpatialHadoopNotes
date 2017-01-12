@@ -1,0 +1,11 @@
+OperationsParam  L131
+
+新版调试参数 
+hdfs://localhost:9000/user/shadoop/render/data/lrdl_1.csv hdfs://localhost:9000/user/shadoop/render/output shape:FeatureShape width:2000 height:2000 -keep-ratio  -overwrite -pyramid levels:1 -no-local  sld:hdfs://localhost:9000/user/shadoop/render/lrdl.sld gml:hdfs://localhost:9000/user/shadoop/render/lrdl.gml
+
+旧版
+hdfs://localhost:9000/user/shadoop/render/data/lrdl_1.csv hdfs://localhost:9000/user/shadoop/render/output shape:tiger width:2000 height:2000 -keep-ratio  -overwrite -pyramid levels:5 -no-local  
+
+
+ 
+

@@ -112,3 +112,13 @@ class GeometryFactory implements Serializable
       AXIS["Geodetic latitude", NORTH], 
       AXIS["Geodetic longitude", EAST], 
       AUTHORITY["EPSG","4490"]]
+
+    GEOGCS["China Geodetic Coordinate System 2000", 
+      DATUM["China 2000", 
+        SPHEROID["CGCS2000", 6378137.0, 298.257222101, AUTHORITY["EPSG","1024"]], 
+        AUTHORITY["EPSG","1043"]], 
+      PRIMEM["Greenwich", 0.0, AUTHORITY["EPSG","8901"]], 
+      UNIT["degree", 0.017453292519943295], 
+      AXIS["Geodetic longitude", EAST], 
+      AXIS["Geodetic latitude", NORTH], 
+      AUTHORITY["EPSG","4490"]]

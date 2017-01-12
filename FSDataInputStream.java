@@ -1,6 +1,9 @@
 DataInput
 	DataInputStream
-		FSDataInputStream
+		FSDataInputStream extends DataInputStream
+          implements Seekable, PositionedReadable, 
+            ByteBufferReadable, HasFileDescriptor, CanSetDropBehind, CanSetReadahead,
+            HasEnhancedByteBufferAccess
 
 	/*
 	Reads some bytes from an input stream and stores them into the buffer array b. 

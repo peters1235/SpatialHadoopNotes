@@ -1,4 +1,8 @@
 abstract class Plotter {
+	//五个函数
+	smooth,
+	create-canvas, plot, merge,  write.
+
 	//子类 
 	GeometricRasterizer
 	HDFRasterizer

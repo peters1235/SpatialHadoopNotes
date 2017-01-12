@@ -1,4 +1,19 @@
 FileInputFormat
+	
+	FileSplit makeSplit(Path file, long start, long length, 
+	                               String[] hosts, String[] inMemoryHosts) {
+	    return new FileSplit(file, start, length, hosts, inMemoryHosts);
+
+	//BloclLocation 存储了块开始的位置对应从整个文件开头处开始的偏移
+	    //给定一个偏移量，可以由此推算出这个位置应该在第几个块里头
+	int getBlockIndex(BlockLocation[] blkLocations, long offset) {
+		// is the offset inside this block?
+		if ((blkLocations[i].getOffset() <= offset) &&
+		    (offset < blkLocations[i].getOffset() + blkLocations[i].getLength())){
+		      return i;
+		  }
+		}
+
 	List<InputSplit> getSplits(JobContext job) 
 		long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
 

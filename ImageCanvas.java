@@ -1,12 +1,13 @@
 /*
 只支持一种颜色？
+Canvas目前只有这一个子类
 */
 class ImageCanvas extends Canvas
 	BufferedImage image
 
 	Graphics2D graphics;
 
-	//x方向上 pixels per input units
+	//x方向上 pixels per input units 把空间坐标乘以这个值 得到 转图像坐标合多少个像素
 	double xscale;
 
 	double yscale;
@@ -35,7 +36,7 @@ class ImageCanvas extends Canvas
 	    getOrCreateGrahics(false).drawImage(another.getImage(), offset.x, offset.y, null);
 
 	BufferedImage getImage() {
-		//清空对象什么信息表作用?
+		//清空对象什么作用?
 	    if (graphics != null) {
 	      graphics.dispose();
 	      graphics = null;

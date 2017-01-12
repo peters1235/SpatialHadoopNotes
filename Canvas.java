@@ -1,9 +1,14 @@
 Canvas implements Writable 
 	//子类
+	//画热力图
 	FrequencyMap
+	//画HDF图
 	HDFRasterLayer
+	//用到了
 	ImageCanvas	
+	
 	SVGCanvas
+	
 
 	/**The MBR of the this layer in input coordinates*/
 	protected Rectangle inputMBR;
