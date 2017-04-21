@@ -1,5 +1,7 @@
-//执行行任务task时，给任务提供job的一个只读视图
+//执行task时，给task提供的job的一个只读视图
+//接口继承接口用extends 不用implements
 public interface JobContext extends MRJobConfig {
+	//里面全是一些get方法
 	public Configuration getConfiguration();
 	public JobID getJobID();
 	public int getNumReduceTasks();

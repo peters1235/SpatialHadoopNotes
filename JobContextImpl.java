@@ -7,8 +7,13 @@ public class JobContextImpl implements JobContext
 	*/
 	protected UserGroupInformation ugi;
 
+	//封装了旧的JobConf
+	protected org.apache.hadoop.mapred.JobConf conf
 
 
+	JobContextImpl(Configuration conf,JobID jobId)
+		//conf 如果是JobConf对象，直接赋值给自己的成员变量，否则作为参数传给JobConf的构造函数，
+		//总之要返回一个JobConf对象	
 
 UserGroupInformation
 	/*

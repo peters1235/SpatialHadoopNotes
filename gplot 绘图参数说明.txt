@@ -1,0 +1,17 @@
+﻿Spatial Hadoop生成地图瓦片命令的参数说明
+
+命令示例：
+shadoop gplot hdfs://localhost:9000/user/shadoop/render/data/431382lyu/twoLayerMap.mc hdfs://localhost:9000/user/shadoop/render/output/map_tiles shape:FeatureShape -overwrite -pyramid levels:5..6 -map
+
+
+参数介绍
+头两个路径参数为集群中的地图配置文件的位置以及输出的地图瓦片的目录
+shape	        输入数据的格式，FeatureShape是用于地图可视化时的专用格式
+overwrite	输出文件夹已经存在的话，覆盖之。
+levels:5..6     生成金字塔的级别，5..6表示生成第6级到第7级瓦片。瓦片的级别从0开始编号，目前只支                  持从第6级开始切。
+pyramid         表示要生成多级瓦片，而不仅是
+map             表示要用按sld的样式来渲染地图
+tilewidth	瓦片宽，单位为像素（默认256）
+tileheight	瓦片高，单位为像素（默认256）
+
+	

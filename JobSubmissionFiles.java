@@ -13,11 +13,19 @@ public class JobSubmissionFiles {
 
 
     /**
-     * 初始化 staging directory并返回其路径.同时记录相关的权限信息  
+     * 根据使用的是LocalJobRunner还是YarnRunner ,在所使用的文件系统上
+     * 创建一个 staging directory并返回其路径.同时记录相关的权限信息  
      */
     public static Path getStagingDir(Cluster cluster, Configuration conf) 
     	//Cluster里有ClientProtocol，由它返回一个路径，返回路径如果存在的话，检查其权限信息，不存在的话，创建之。
         Path stagingArea = cluster.getStagingAreaDir();
+            return new Path(client.getStagingAreaDir());
+                /*
+                LocalJobRunner
+
+                YarnRunner 返回不同的相对路径
+                */
+
         FileSystem fs = stagingArea.getFileSystem(conf);
         String realUser;
         String currentUser;

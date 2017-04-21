@@ -1,48 +1,48 @@
 SpatialRecordReader3<V extends Shape> extends RecordReader<Partition, Iterable<V>>
 
-    /**The offset to start reading the raw (uncompressed) file*/
-	private long start;
-  	/**The last byte to read in the raw (uncompressed) file*/
-  	private long end;
-  
-  	/**The path of the input file to read*/  	
-  	private Path path;
+      /**The offset to start reading the raw (uncompressed) file*/
+  	long start;
+    	/**The last byte to read in the raw (uncompressed) file*/
+    	long end;
+    
+    	/**The path of the input file to read*/  	
+    	Path path;
 
-	/** The boundary of the partition currently being read */
-	protected Partition cellMBR;
+  	/** The boundary of the partition currently being read */
+  	protected Partition cellMBR;
 
-  /**
-  * The input stream that reads directly from the input file.
-  * If the file is not compressed, this stream is the same as #in.
-  * Otherwise, this is the raw (compressed) input stream. This stream is used
-  * only to calculate the progress of the input file.
-  */
-  private FSDataInputStream directIn;
-  /** Input stream that reads data from input file */
-  private InputStream in;
-  /**Determine current position to report progress*/
-  private Seekable progressPosition;
+    /**
+    * The input stream that reads directly from the input file.
+    * If the file is not compressed, this stream is the same as #in.
+    * Otherwise, this is the raw (compressed) input stream. This stream is used
+    * only to calculate the progress of the input file.
+    */
+    FSDataInputStream directIn;
+    /** Input stream that reads data from input file */
+    InputStream in;
+    /**Determine current position to report progress*/
+    Seekable progressPosition;
 
-  /**Used to read text lines from the input*/
-  private LineReader lineReader;
+    /**Used to read text lines from the input*/
+    LineReader lineReader;
 
-/**The shape used to parse input lines*/
-  private V stockShape;
+    //用指定类型的Shape的默认构造函数 构造一个对象出来，再调用其 fromText 或者 readFields 之类的方法解析出实际的Shape**The shape used to parse input lines*/
+    V stockShape;
 
-  /**The MBR of the input query. Used to apply duplicate avoidance technique*/
-	private Rectangle inputQueryMBR;
+    /**The MBR of the input query. Used to apply duplicate avoidance technique*/
+  	Rectangle inputQueryMBR;
 
-  /**
-   * Number of bytes read from the input so far. This is used to determine when
-   * to stop when reading from the input directly. We canno simply rely on the
-   * position of the input file because LineReader might buffer some data in
-   * memory without actually processing it.
-   */
-  private long bytesRead;
+    /**
+     * Number of bytes read from the input so far. This is used to determine when
+     * to stop when reading from the input directly. We canno simply rely on the
+     * position of the input file because LineReader might buffer some data in
+     * memory without actually processing it.
+     */
+    long bytesRead;
 
-  private Counter inputRecordsCounter;
+    Counter inputRecordsCounter;
 
-  public void initialize(InputSplit split, TaskAttemptContext context)
+  void initialize(InputSplit split, TaskAttemptContext context)
   	Configuration conf = context != null ? context.getConfiguration() : new Configuration();
   	
   	initialize(split, conf);
@@ -77,63 +77,63 @@ SpatialRecordReader3<V extends Shape> extends RecordReader<Partition, Iterable<V
       			in = cIn;
       			progressPosition = cIn;   
     	else 
-    		// Non-compressed file, seek to the desired position and use this stream
-    		// to get the progress and position
-    		directIn.seek(start);
-    		in = directIn;
-  			progressPosition = directIn;
+    		  // Non-compressed file, seek to the desired position and use this stream
+    		  // to get the progress and position
+    		  directIn.seek(start);
+    		  in = directIn;
+  			  progressPosition = directIn;
   		//到这一步，可分的压缩文件，不可分的，非压缩文件，都能用in来读了
     		
   		//文件里存的GeometryType
   		this.stockShape = (V) OperationsParams.getShape(conf, "shape");
   		this.tempLine = new Text();
   		this.lineReader = new LineReader(in);
-  			this(in, DEFAULT_BUFFER_SIZE： 64 * 1024 [0x10000]);	
-			    this.in = in;
-		    this.bufferSize = bufferSize：DEFAULT_BUFFER_SIZE：;
-		    this.buffer = new byte[this.bufferSize];
-		    this.recordDelimiterBytes = null;
+  			  this(in, DEFAULT_BUFFER_SIZE： 64 * 1024 [0x10000]);	
+			      this.in = in;
+		      this.bufferSize = bufferSize：DEFAULT_BUFFER_SIZE：;
+		      this.buffer = new byte[this.bufferSize];
+		      this.recordDelimiterBytes = null;
 
   		bytesRead = 0;
   		if (this.start != 0) {
-        /*start!=0 表示 当前分区不是从文件的开头处开始的，
-          那么这个分片的开头有可能是 上一个分片的最后一行的 结尾部分
-          这部分，应该在上一个分片已经处理好了，在本分片中不需要处理
-        */
-
-  			// Skip until first end-of-line reached
-        //读入一行，存入tempLine中，返回读入的字节数
-  			bytesRead += lineReader.readLine(tempLine);    			    				
+          /*start!=0 表示 当前分区不是从文件的开头处开始的，
+            那么这个分片的开头有可能是 上一个分片的最后一行的 结尾部分
+            这部分，应该在上一个分片已经处理好了，在本分片中不需要处理
+          */
+  
+  			  // Skip until first end-of-line reached
+          //读入一行，存入tempLine中，返回读入的字节数
+  			  bytesRead += lineReader.readLine(tempLine);    			    				
   			
   		//用全局索引做初步过滤用的
   		if (conf.get(SpatialInputFormat3.InputQueryRange) != null) {
-	    	// Retrieve the input query range to apply on all records
-	    	this.inputQueryRange = OperationsParams.getShape(conf,
-	    	    SpatialInputFormat3.InputQueryRange);
-	    	this.inputQueryMBR = this.inputQueryRange.getMBR();
-
+	      	// Retrieve the input query range to apply on all records
+	      	this.inputQueryRange = OperationsParams.getShape(conf,
+	      	    SpatialInputFormat3.InputQueryRange);
+	      	this.inputQueryMBR = this.inputQueryRange.getMBR();
+  
       // Check if there is an associated global index to read cell boundaries
 	    GlobalIndex<Partition> gindex = SpatialSite.getGlobalIndex(fs, path.getParent());
 	    if (gindex == null) {
-		    cellMBR = new Partition();
-		    cellMBR.filename = path.getName();
-		    cellMBR.invalidate();
-		    	this.x1 = Double.NaN;
+		      cellMBR = new Partition();
+		      cellMBR.filename = path.getName();
+		      cellMBR.invalidate();
+		    	   this.x1 = Double.NaN;
 		  } else {
-		    // Set from the associated partition in the global index
-		    for (Partition p : gindex) {
-		      if (p.filename.equals(this.path.getName()))
-		        cellMBR = p;
-		    }
+		      // Set from the associated partition in the global index
+		      for (Partition p : gindex) {
+		          if (p.filename.equals(this.path.getName()))
+		              cellMBR = p;
+		      }
 		  }
 
 		  this.value = new ShapeIterator<V>();
 		  value.setShape(stockShape);
-		  	//stockShape : rect 之类的
-		  	this.shape = shape;
-  			this.nextShape = (V) shape.clone();
-				if (srr != null && !srr.nextShape(nextShape))
-        		nextShape = null;
+		  	  //stockShape : rect 之类的
+		  	  this.shape = shape;
+  			  this.nextShape = (V) shape.clone();
+				  if (srr != null && !srr.nextShape(nextShape))
+          		nextShape = null;
 
   /*
   Reads next shape from input and returns true. 
@@ -188,47 +188,47 @@ SpatialRecordReader3<V extends Shape> extends RecordReader<Partition, Iterable<V
           //cellMBR:The boundary of the partition currently being read
     return true; 
 
-  public boolean nextKeyValue()
-  	value.setSpatialRecordReader(this);  		
-  	return value.hasNext();
-			return nextShape != null;
+  boolean nextKeyValue()
+  	  value.setSpatialRecordReader(this);  		
+  	  return value.hasNext();
+			   return nextShape != null;
 
-	public Partition getCurrentKey() throws IOException, InterruptedException {
-  	return cellMBR;
+	Partition getCurrentKey() throws IOException, InterruptedException {
+  	  return cellMBR;
 
-  public Iterable<V> getCurrentValue() 
+  Iterable<V> getCurrentValue() 
 	    return value;
 
 
-public static class ShapeIterator<V extends Shape> implements Iterator<V>, Iterable<V> {    
-    public void setSpatialRecordReader(SpatialRecordReader3<V> srr) {
-    	this.srr = srr;
-    	if (shape != null)
-        nextShape = (V) shape.clone();
-        //nextShape 得先有一个值，才能传到SpatialRecrodReader的nextShape方法中去取下一个对象
-        //所以才非要先给nextShape赋个值，这有点别扭，可能还有别的原因
-      if (nextShape != null && !srr.nextShape(nextShape))
-        nextShape = null;
+static class ShapeIterator<V extends Shape> implements Iterator<V>, Iterable<V> {    
+    void setSpatialRecordReader(SpatialRecordReader3<V> srr) {
+    	  this.srr = srr;
+    	  if (shape != null)
+            nextShape = (V) shape.clone();
+            //nextShape 得先有一个值，才能传到SpatialRecrodReader的nextShape方法中去取下一个对象
+            //所以才非要先给nextShape赋个值，这有点别扭，可能还有别的原因
+        if (nextShape != null && !srr.nextShape(nextShape))
+            nextShape = null;
 
-    public boolean hasNext() {    	
-    	return nextShape != null;
+    boolean hasNext() {    	
+    	  return nextShape != null;
 
-    public V next() {
-    	//返回nextShape的当前值，并把nextShape的值往前推一个，
-    	if (nextShape == null)
-          return null;
-      	// Swap Shape and nextShape and read next
-      	//为什么要交换？
-      	if (!srr.nextShape(nextShape))
-          nextShape = null;
-
-      	srr.inputRecordsCounter.increment(1);
-
-      	return shape;
-
-
-      	Iterator it = null;
-      	while(it.hasNext()){
-      		Pet p = it.next();
-      		//.....
-      	}
+    //nextShape 指向已经读出来，还没返回用户的 Gometry，next方法返回的是现在的nextShape
+    //同时在这个方法野 让nextShape 指向下一个 新的shape  
+    V next() {
+      	//返回nextShape的当前值，并把nextShape的值往前推一个，
+      	if (nextShape == null)
+            return null;
+        // Swap Shape and nextShape and read next
+        //为什么要交换？
+        if (!srr.nextShape(nextShape))
+            nextShape = null; 
+        srr.inputRecordsCounter.increment(1); 
+        return shape; 
+        
+//Iterartor的用法 
+        Iterator it = null;
+        while(it.hasNext()){
+        	Pet p = it.next();
+        	//.....
+        }

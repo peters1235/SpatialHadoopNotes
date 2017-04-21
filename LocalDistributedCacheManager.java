@@ -6,6 +6,7 @@ class LocalDistributedCacheManager {
 	/**
 	 * Set up the distributed cache by localizing the resources, and updating
 	 * the configuration with references to the localized resources.
+	 * 将distributed cache 中的资源本地化，并更新相应的配置
 	 * @param conf
 	 * @throws IOException
 	 */

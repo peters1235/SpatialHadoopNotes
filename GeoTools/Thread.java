@@ -1,0 +1,1 @@
+class Thread implements Runnable

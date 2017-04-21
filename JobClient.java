@@ -1,12 +1,29 @@
 package org.apache.hadoop.mapred;
 
 public class JobClient extends CLI 
-//在旧API中使用，转了一圈还是调用的Job来完成提交工作 ，新API中直接用Job
+/*
+旧API中 ，用JobConf进行配置，用JobClient提交、执行、跟踪任务
+提交任务的工作：
+	检查输入输出
+	生成Split
+	准备DistributedCache
+	上传Jar包和相应的配置
+	提交任务到集群
+
+	runJob  提交任务、执行完再返回 
+	submitJob 提交任务，通过返回的 RunningJob对象来查询执行状态，并进行调度
+	setJobEndNotificationURI  任务执行完之后 发个通知
+
+    旧API中使用，转了一圈还是调用的Job来完成提交工作 ，
+    submitJob
+      submitJobInternal
+        Job.submit
+	新API中直接用Job
 	//里面有submitJobInternal方法
 
 	//新的API中的Job类里头用到的JobSubmitter类里也有submitInternal方法
 
-	/** 
+	/*
 	 * Utility that submits a job, then polls for progress until the job is
 	 * complete.	 
 	 */
@@ -48,8 +65,7 @@ public class JobClient extends CLI
 	RunningJob submitJob(final JobConf conf) 
 	    return submitJobInternal(conf);
 
-	public RunningJob submitJobInternal(final JobConf conf)
-	     
+	public RunningJob submitJobInternal(final JobConf conf)	     
 	 
 	    conf.setBooleanIfUnset("mapred.mapper.new-api", false);
 	    conf.setBooleanIfUnset("mapred.reducer.new-api", false);

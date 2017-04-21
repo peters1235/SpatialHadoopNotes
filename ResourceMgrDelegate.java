@@ -5,6 +5,11 @@ public class ResourceMgrDelegate extends YarnClient {
         return client.submitApplication(appContext);
 
 
+    String getStagingAreaDir()
+        String user = UserGroupInformation.getCurrentUser().getShortUserName();
+        Path path = MRApps.getStagingAreaDir(this.conf, user);
+        LOG.debug("getStagingAreaDir: dir=" + path);
+        return path.toString();
 
 public class YarnClientImpl extends YarnClient {
 	protected ApplicationClientProtocol rmClient;

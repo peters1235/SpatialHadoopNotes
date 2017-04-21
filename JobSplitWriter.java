@@ -5,16 +5,37 @@ public class JobSplitWriter {
         org.apache.hadoop.mapred.InputSplit[] splits) 
     
         FSDataOutputStream out = createFile(fs, JobSubmissionFiles.getJobSplitFile(jobSubmitDir), conf);
-                                                   //JobSubmissionFiles 在下面
-        SplitMetaInfo[] info = writeOldSplits(splits, out, conf);
+            return new Path(jobSubmissionDir, "job.split");
+            FSDataOutputStream out = FileSystem.create(fs, splitFile, 
+                new FsPermission(JobSubmissionFiles.JOB_FILE_PERMISSION));
+            int replication = job.getInt(Job.SUBMIT_REPLICATION, 10);
+            fs.setReplication(splitFile, (short)replication);
+            writeSplitHeader(out);
+                out.write(SPLIT_FILE_HEADER);
+                out.writeInt(splitVersion);
+            return out;
+                                                  
+        SplitMetaInfo[] info = writeNewSplits(splits, out, conf);
         out.close();
         //写入元数据文件头以及各个SplitMetaInfo
         writeJobSplitMetaInfo(fs,JobSubmissionFiles.getJobSplitMetaFile(jobSubmitDir), 
-            new FsPermission(JobSubmissionFiles.JOB_FILE_PERMISSION), splitVersion,
-            info);
+          new FsPermission(JobSubmissionFiles.JOB_FILE_PERMISSION), splitVersion,
+          info);
+            // write the splits meta-info to a file for the job tracker
+            FSDataOutputStream out = 
+              FileSystem.create(fs, filename, p);
+            out.write(JobSplit.META_SPLIT_FILE_HEADER);
+            WritableUtils.writeVInt(out, splitMetaInfoVersion);
+            WritableUtils.writeVInt(out, allSplitMetaInfo.length);
+            for (JobSplit.SplitMetaInfo splitMetaInfo : allSplitMetaInfo) {
+              splitMetaInfo.write(out);
+            }
+            out.close();
    
     //Split由两部分信息组成， 两部分供不同的类使用，参见JobSplit类的说明   
-    static SplitMetaInfo[] writeOldSplits( org.apache.hadoop.mapred.InputSplit[] splits,
+    //把各个分片的信息序列化到job.split 文件中
+    //同时用SplitMetaInfo【】 记录各个分片的元数据 ：所在机器，在job.split文件中的开始位置，分片中数据的字节数
+    static SplitMetaInfo[] writeNewSplits( org.apache.hadoop.mapred.InputSplit[] splits,
           FSDataOutputStream out, Configuration conf)  
       
         SplitMetaInfo[] info = new SplitMetaInfo[splits.length];
@@ -78,3 +99,7 @@ package org.apache.hadoop.mapreduce.split;
  * file.
  */
 public class JobSplit {
+    public static class SplitMetaInfo implements Writable {
+        private long startOffset;
+        private long inputDataLength;
+        private String[] locations;    

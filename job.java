@@ -3,7 +3,7 @@ package org.apache.hadoop.mapreduce;
 提交job的用户眼中的 job
 The job submitter's view of the Job.
 
-It allows the user to configure the job, submit it, control its execution, and query the state. 
+可以通过这个类配置、提交任务，控制任务的执行，并查询其执行状态
 The set methods only work until the job is submitted, afterwards they will throw an IllegalStateException.
 
 Normally the user creates the application, 
@@ -28,6 +28,9 @@ Here is an example on how to submit a job:
      job.waitForCompletion(true);
  */
 public class Job extends JobContextImpl implements JobContext { 
+
+	public static enum JobState {DEFINE, RUNNING};
+
 	//用于获取集群信息
 	private Cluster cluster;
 
@@ -52,7 +55,10 @@ public class Job extends JobContextImpl implements JobContext {
 
 	/*把任务提交到集群然后立即返回*/
 	public void submit() 
-		/*要求JobState必须为Define，不知道什么用*/
+		/*要求JobState必须为Define，不知道什么用
+		State枚举要么为Define要么为Running
+		应该是要区分定义任务和执行任务
+		*/
 		ensureState(JobState.DEFINE);
 			if (state != this.state) {
 			  throw new IllegalStateException("Job in state "+ this.state + 

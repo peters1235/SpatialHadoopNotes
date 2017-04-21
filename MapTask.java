@@ -107,8 +107,10 @@ public class MapTask extends Task {
 	                           new MapOutputCollector.Context(this, job, reporter);
 	      collector.init(context);
 	    }
-	    MapRunnable<INKEY,INVALUE,OUTKEY,OUTVALUE> runner =
-	        ReflectionUtils.newInstance(job.getMapRunnerClass(), job);
+	    MapRunnable<INKEY,INVALUE,OUTKEY,OUTVALUE> runner =  ReflectionUtils.newInstance(job.getMapRunnerClass(), job);	        
+	    	org.apache.hadoop.mapred.MapRunner
+	    		public void configure(JobConf job) {
+	    		  this.mapper = ReflectionUtils.newInstance(job.getMapperClass(), job);
 
 	    try {
 	        runner.run(in, new OldOutputCollector(collector, conf), reporter);
@@ -145,6 +147,19 @@ public class MapTask extends Task {
 	    // make a task context
 
 	    // make a mapper
+	        org.apache.hadoop.mapreduce.Mapper<INKEY,INVALUE,OUTKEY,OUTVALUE> mapper =
+	          (org.apache.hadoop.mapreduce.Mapper<INKEY,INVALUE,OUTKEY,OUTVALUE>)
+	            ReflectionUtils.newInstance(taskContext.getMapperClass(), job);
+	                JobContextImpl.getMapperClass() 
+	                	return (Class<? extends Mapper<?,?,?,?>>) 
+	                	    conf.getClass(MAP_CLASS_ATTR, Mapper.class);
+								"mapreduce.job.map.class";
+
+				Job job = new Job(params, "MultilevelPlot");
+					Job extends JobContextImpl implements JobContext {  
+				job.setMapperClass(PyramidPartitionMap.class);
+					ensureState(JobState.DEFINE);
+					conf.setClass(MAP_CLASS_ATTR, cls, Mapper.class);
 
 	    // make the input format
 

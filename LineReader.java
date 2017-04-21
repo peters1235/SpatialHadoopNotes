@@ -57,7 +57,7 @@ class LineReader implements Closeable {
 			     * 1.  Buffer里没有换行符，则需要把Buffer中的全部数据都读出来，并且还要从in中读一部分数据到Buffer中
 			          No newline characters are in the buffer, so we need to copy
 			     *    everything and read another buffer from the stream.
-			     * 2. Buffer里有完整的换行符，则把“” 读到str中就好了An unambiguously terminated line is in buffer, so we just
+			     * 2. Buffer里有完整的换行符，则把对应的内容 读到str中就好了An unambiguously terminated line is in buffer, so we just
 			     *    copy to str.
 			     * 3. Buffer的末尾是换行符一部分，eg只有CR，则str中存储 Buffer里直到CR字符前的内容，
 			          同时还得查看 CR后面是不是LF，如果是的话，这个LF要去掉，这样下次读一行的话就不会把LF给读进去
@@ -93,6 +93,7 @@ class LineReader implements Closeable {
 
 				  	    startPosn = bufferPosn = 0;
 				  	    if (prevCharCR) {
+				  	    	//还之前的账，把上一次缓存中剩下的换行符算进来
 				  		    ++bytesConsumed;
 				  	    //重新从in里读到Buffer里
 				  	    bufferLength = fillBuffer(in, buffer, prevCharCR);	                       
@@ -128,12 +129,12 @@ class LineReader implements Closeable {
 		      		  /*如果是因为LF退出的，则在那个条件后面有个++bufferPosn，bufferPosn指向的是LF后一个字符
 		      		  	如果是因为只有CR退出的，则bufferPosn指向的是CR后面的一个字符
 		      		  	如果是这次在Buffer中没有读到换行符，则buff相若erPosn指向Buffer结尾后一个字符，
-		      		  	总之，直接拿bufferPosn - startPosn 就是这个Buffer中 这次应该被处理的字节数
+		      		  	总之，直接拿bufferPosn - startPosn 就是这个Buffer中 这次已经被处理的字节数
 						*/
 					int readLength = bufferPosn - startPosn;
 					if (prevCharCR && newlineLength == 0) {
                         //缓存中最后一个字符是CR才能进到这里来，
-                        //这个字符在这一遍读取的过程中不读，留给下一遍
+                        //这个字符在这一遍读取的过程中不读，留给下一遍，下次读完缓存后，到97行去一起处理
   						--readLength; //CR at the end of the buffer
 		                      
 					bytesConsumed += readLength;

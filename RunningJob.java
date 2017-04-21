@@ -1,0 +1,2 @@
+//从JobClient返回，用于查询正在执行的任务的状态的对象
+interface RunningJob

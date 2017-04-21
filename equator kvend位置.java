@@ -77,7 +77,7 @@ bufindex
 		//after write kv 
 		bufindex += len;
 	shiftBufferedKey()
-		//没看明白
+		
 	collect
 		// after startSpill
 		setEquator(newPos);
@@ -90,7 +90,7 @@ bufmark
 	int markRecord() {
 		//本方法只在collect里头，序列化完key，并且调用完 shiftBufferedkey之后调用
 	  	bufmark = bufindex;
-	  	
+
 kvindex
 	collect
 		kvindex = (kvindex - NMETA + kvmeta.capacity()) % kvmeta.capacity();

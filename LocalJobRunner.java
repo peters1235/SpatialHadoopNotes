@@ -2,7 +2,47 @@ class LocalJobRunner implements ClientProtocol {
 	private HashMap<JobID, Job> jobs = new HashMap<JobID, Job>();
 
 	//这里头也有个Job，跟MapReduce的Job不一样
+	//600 多行
 	private class Job extends Thread implements TaskUmbilicalProtocol {
+		Job(JobID jobid, String jobSubmitDir) 
+			this.systemJobDir = new Path(jobSubmitDir);
+			this.systemJobFile = new Path(systemJobDir, "job.xml");
+			this.id = jobid;
+			JobConf conf = new JobConf(systemJobFile);
+			
+			//最后
+			this.start();
+
+		void run() {
+			JobID jobId = profile.getJobID();
+			JobContext jContext = new JobContextImpl(job, jobId);
+
+			outputCommitter = createOutputCommitter(conf.getUseNewMapper(), jobId, conf);
+
+			try
+
+				List<RunnableWithThrowable> mapRunnables = getMapTaskRunnables(
+				    taskSplitMetaInfos, jobId, mapOutputFiles);
+				      
+				initCounters(mapRunnables.size(), numReduceTasks);
+				ExecutorService mapService = createMapExecutor();
+				runTasks(mapRunnables, mapService, "map");
+
+				if (numReduceTasks > 0) {
+				    List<RunnableWithThrowable> reduceRunnables = getReduceTaskRunnables(
+				        jobId, mapOutputFiles);
+				    ExecutorService reduceService = createReduceExecutor();
+				    runTasks(reduceRunnables, reduceService, "reduce");
+
+				// delete the temporary directory in output directory
+				outputCommitter.commitJob(jContext);
+				status.setCleanupProgress(1.0f);
+
+			finally
+				fs.delete(systemJobFile.getParent(), true);  // delete submit dir
+				localFs.delete(localJobFile, true);              // delete local copy
+				// Cleanup distributed cache
+				localDistributedCacheManager.close();
 
 	 
 	public String getStagingAreaDir()  
@@ -26,6 +66,9 @@ class LocalJobRunner implements ClientProtocol {
 	     Credentials credentials) throws IOException {
 	    //这个Job是LocalJobRunner 定义的Job
 	    Job job = new Job(JobID.downgrade(jobid), jobSubmitDir);
+	    	//Downgrade a new JobID to an old one
+
+
 	    job.job.setCredentials(credentials);
 	    return job.status;
 

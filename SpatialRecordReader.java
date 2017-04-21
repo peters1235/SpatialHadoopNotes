@@ -31,6 +31,7 @@ abstract class SpatialRecordReader<K, V> implements RecordReader<K, V>
 	使用输入流或者文件初始化Reader，
 	如果输入文件有全局索引的话，取该分区的MBR
 	判断文件是R树索引的文件还是一般文件。R树索引的文件可以视情况跳过R树索引	
+	如果当前块不是文件的第一个块的话，还要把块中的第一行舍弃掉，因为上一个块在处理最后一行时读入了这一部分内容
 	*/
 	boolean initializeReader()
 		//如果输入的是文件，且该文件有全局索引的话，用全局索引和本分区的名字查得
@@ -55,10 +56,11 @@ abstract class SpatialRecordReader<K, V> implements RecordReader<K, V>
 
 			// Skip the first line unless we are reading the first block in file
 			// For globally indexed blocks, never skip the first line in the block
+			//这后面都只为跳过非首块的第一行，
 			//跳过非首块的首行是因为该行的内容在上一个块里已经处理了？
 			boolean skipFirstLine = getPos() != 0;
 			if (buffer != null && skipFirstLine) {
-				//buffer 中有换行符的话，eol == 换行符"\r\n"(不知道只有\r 或者\n 可不可以)后面一个字符的索引
+				//buffer 中有换行符的话，eol == 换行符(\r\n 或者 \r 或者\n)后面一个字符的索引
 				//buffer 中没有换行符的话，eol == buffer.length
 				//作判断的基本玩法是，对的，对的，。。。对的，错的，访问到一次错的之后，再回个头，才能取到全部的对的
 				int eol = RTree.skipToEOL(buffer, 0);
@@ -67,9 +69,8 @@ abstract class SpatialRecordReader<K, V> implements RecordReader<K, V>
 				// a line from the open stream. This happens if the EOL returned is
 				// beyond the end of buffer and the buffer is not a complete line
 				// by itself
-				/*
-				判断条件似乎有问题 \r \n 如果只有一个呢？
-				**/
+				//注释没说清楚，skip_another_line_from_stream 为真的条件是 整个buffer中都没有行尾符
+				//处理上一个块的时候，读到了buffer再往后的内容，所以要继续从Stream 中读取行才能跳过已经处理的部分
 				boolean skip_another_line_from_stream = eol >= buffer.length && buffer[buffer.length - 1] != '\n';
 				if (eol < buffer.length) {
 					//buffer的中间有\r\n，而且后续还有内容，则把换行符前头的舍弃，
@@ -78,9 +79,10 @@ abstract class SpatialRecordReader<K, V> implements RecordReader<K, V>
 					/*
 					buffer中没换行符，或者最末尾才是换行符，
 					则buffer中的内容全部舍弃
-					pos += buffer.length;
-					 buffer = null;
 					*/
+					pos += buffer.length;
+					buffer = null;
+					
 				if (skip_another_line_from_stream) {
 					//缓存中没有找到换行符，则继续读入直到找到换行符
 					pos += lineReader.readLine(tempLine, Integer.MAX_VALUE, (int)(end - pos));

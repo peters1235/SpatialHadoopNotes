@@ -2,6 +2,14 @@ package org.apache.hadoop.mapreduce;
 JobSubmitter
 
 	private ClientProtocol submitClient;
+	private FileSystem jtFs;
+
+	JobSubmitter(FileSystem submitFs, ClientProtocol submitClient) 	
+	    this.submitClient = submitClient;
+        this.jtFs = submitFs;
+
+	//两个文件系统相等则返回True否则返回False
+	boolean compareFs(FileSystem srcFs, FileSystem destFs) {
 
 	public interface ClientProtocol extends VersionedProtocol ,没了{
 	/*
@@ -35,10 +43,9 @@ JobSubmitter
 		//把 一个什么框架 添加 到Cache里，不知道框架干啥用的
 		addMRFrameworkToDistributedCache(conf);
 			DistributedCache.addCacheArchive(uri, conf);
-
 		
 		/*
-		像是什么中间目录的东西
+		把任务执行所需要的Jar包 配置文件等放一块来，再提交
    		* Initializes the staging directory and returns the path. It also
 		   * keeps track of all necessary ownership & permissions*/
 		Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster, conf);
@@ -58,16 +65,74 @@ JobSubmitter
 		    + " as the submit dir");
 
 		//好像会把各种jar包 lib 都放到对应的位置去
-		copyAndConfigureFiles(Job job, Path jobSubmitDir) 
+		copyAndConfigureFiles(Job job, Path submitJobDir) 
 			short replication = (short)conf.getInt(Job.SUBMIT_REPLICATION, 10);
 			copyAndConfigureFiles(job, jobSubmitDir, replication);
-				//这些好像不是SideData里添加的lib jar file 所对应的参数
-				//可能是从命令行添加的文件才会通过 这个 方法添加到集群中
-
-
+				
+				 
+				//从命令行添加的文件、jar包 的路径会放在tmp**参数里
+ 				// get all the command line arguments passed in by the user conf
 				String files = conf.get("tmpfiles");
 				String libjars = conf.get("tmpjars");
 				String archives = conf.get("tmparchives");
+				String jobJar = job.getJar();
+
+				//真正创建对应的提交文件夹
+				FileSystem.mkdirs(jtFs, submitJobDir, mapredSysPerms);
+
+				Path filesDir = JobSubmissionFiles.getJobDistCacheFiles(submitJobDir);
+					return new Path(jobSubmitDir, "files");
+				Path archivesDir = JobSubmissionFiles.getJobDistCacheArchives(submitJobDir);
+					return new Path(jobSubmitDir, "archives");
+				Path libjarsDir = JobSubmissionFiles.getJobDistCacheLibjars(submitJobDir);
+					return new Path(jobSubmitDir, "libjars");
+
+				//这注释印证了前面说的，只添加 命令行中传过来的  文件 jar包等
+				// add all the command line files/ jars and archive
+				// first copy them to jobtrackers filesystem 
+
+				if (files != null) {
+					//这里的jtFs cluster.getFileSystem
+					FileSystem.mkdirs(jtFs, filesDir, mapredSysPerms);
+					String[] fileArr = files.split(",");
+					for (String tmpFile: fileArr) {
+						URI tmpURI = new URI(tmpFile);
+						Path tmp = new Path(tmpURI);
+						Path newPath = copyRemoteFiles(filesDir, tmp, conf, replication);
+							FileSystem remoteFs = null;
+							remoteFs = originalPath/*:tmp*/.getFileSystem(conf);
+							if (compareFs(remoteFs, jtFs)) {
+							  return originalPath;
+							}
+							// this might have name collisions. copy will throw an exception
+							//parse the original path to create new path
+							Path newPath = new Path(parentDir, originalPath.getName());
+							FileUtil.copy(remoteFs, originalPath, jtFs, newPath, false, conf);
+								//前两个参数是source ，后两个参数是dest
+
+							//设置已有文件的备份数
+							jtFs.setReplication(newPath, replication);
+							return newPath;
+
+						URI pathURI = getPathURI(newPath, tmpURI.getFragment());
+						DistributedCache.addCacheFile(pathURI, conf);
+
+				if (libjars != null) {
+				if (archives != null) {
+				if (jobJar != null) {   // copy jar to JobTracker's fs
+
+				addLog4jToDistributedCache(job, submitJobDir);
+
+				//设置添加的文件的时间戳				
+				ClientDistributedCacheManager.determineTimestampsAndCacheVisibilities(conf);
+
+			if (job.getWorkingDirectory() == null) {
+			    job.setWorkingDirectory(jtFs.getWorkingDirectory());
+			    	ensureState(JobState.DEFINE);
+			    	conf.setWorkingDirectory(dir);
+
+		Path submitJobFile = JobSubmissionFiles.getJobConfPath(submitJobDir);
+			return new Path(jobSubmitDir, "job.xml");
 
 		//生成分片信息文件 
 		int maps = writeSplits(job, submitJobDir);
@@ -93,13 +158,13 @@ JobSubmitter
 		if (status != null) {
 		    return status;
 		} else {
-		    throw new IOException("Could not launch job");
+		    throw new IOException("Could not launch job");		  
 
-
-
-		  
+	private Path copyRemoteFiles(Path parentDir,
+	    Path originalPath, Configuration conf, short replication) 
 
 	//生成分片
+	//新旧API写入的 Split文件 和Split文件的元数据文件 都差不多，一个文件是各个 Split的序列化，另一个是各个Split的所在位置、Split长度，在Split文件中的起始位置
 	int writeSplits(org.apache.hadoop.mapreduce.JobContext job,Path jobSubmitDir)  
 	    JobConf jConf = (JobConf)job.getConfiguration();
 	    int maps;
@@ -113,8 +178,8 @@ JobSubmitter
 	    return maps;
 
 	//writeNewSplits 和SplitComparator 类是用新API时调用的，
-	    //writeOldSplits 看着是把用于比较分片大小的类放到writeOldSplits方法里了
-	<T extends InputSplit>
+	//writeOldSplits 看着是把用于比较分片大小的类放到writeOldSplits方法里了
+		<T extends InputSplit>
 	int writeNewSplits(JobContext job, Path jobSubmitDir) 
 	    Configuration conf = job.getConfiguration();
 	    InputFormat<?, ?> input =
